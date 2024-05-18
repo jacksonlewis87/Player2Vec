@@ -5,6 +5,7 @@ from enum import Enum
 
 class Loss(Enum):
     L2 = "l2"
+    WEIGHTED_L2 = "weighted_l2"
     BCE = "bce"
 
 
@@ -13,9 +14,7 @@ class L2Loss(torch.nn.Module):
         super(L2Loss, self).__init__()
 
     def forward(self, output, labels):
-        labels_t = torch.transpose(labels, 0, 1)
-        output_t = torch.transpose(output, 0, 1)
-        return torch.mean(torch.sum(torch.pow(labels_t - output_t, 2), dim=0))
+        return torch.mean(torch.sum(torch.pow(labels - output, 2), dim=0))
 
 
 class WeightedL2Loss(torch.nn.Module):
@@ -24,9 +23,7 @@ class WeightedL2Loss(torch.nn.Module):
         self.softmax = torch.nn.Softmax()
 
     def forward(self, output, labels, weights):
-        labels_t = torch.transpose(labels, 0, 1)
-        output_t = torch.transpose(output, 0, 1)
-        return torch.sum(torch.mean(torch.pow(labels_t - output_t, 2), dim=1) * self.softmax(weights))
+        return torch.sum(torch.mean(torch.pow(labels - output, 2), dim=0) * self.softmax(weights))
 
 
 class BCELoss(torch.nn.Module):
@@ -41,6 +38,8 @@ class BCELoss(torch.nn.Module):
 def get_loss(loss: str):
     if loss == Loss.L2.value:
         return L2Loss()
+    elif loss == Loss.WEIGHTED_L2.value:
+        return WeightedL2Loss()
     elif loss == Loss.BCE.value:
         return BCELoss()
     else:
