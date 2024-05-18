@@ -7,7 +7,7 @@ from typing import Optional
 
 from constants import ROOT_DIR
 from data.data_collection.season_statlines import EnhancedJSONEncoder
-from data.embeddings.transforms import remove_total_seasons, normalize_dataset, remove_eval_seasons
+from data.embeddings.transforms import remove_non_total_seasons, normalize_dataset, remove_eval_seasons
 from data.embeddings.data_config import DataConfig
 
 
@@ -27,7 +27,7 @@ class Player2VecDataset(Dataset):
             data = json.load(fp=f)
 
         data = remove_eval_seasons(dataset=data)
-        data = remove_total_seasons(dataset=data)
+        data = remove_non_total_seasons(dataset=data)
         self.player_season_encodings = setup_player_season_encodings(data=data)
         data = {f"{row['player_id']}_{row['season']}": row for row in data}
         self.player_seasons = list(data.keys())

@@ -55,7 +55,7 @@ def normalize_dataset(dataset: dict, keys_to_ignore: list):
     return new_dataset
 
 
-def remove_total_seasons(dataset: list):
+def remove_non_total_seasons(dataset: list):
     tot_seasons = {}
     for sample in dataset:
         if sample["team_id"] == 0:
