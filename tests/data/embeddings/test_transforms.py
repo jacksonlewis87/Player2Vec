@@ -3,10 +3,11 @@ from unittest.mock import patch
 
 from data.embeddings.transforms import (
     preprocess_field,
-    FieldNorm,
     normalize_dataset,
     remove_non_total_seasons,
     remove_eval_seasons,
+    remove_eval_seasons_game_id,
+    convert_to_list,
 )
 
 
@@ -84,3 +85,30 @@ def test_remove_eval_seasons():
     result = remove_eval_seasons(dataset=dataset)
 
     assert result == [sample_1]
+
+
+@patch("data.embeddings.transforms.EVAL_SEASONS", [2009])
+def test_remove_eval_seasons_game_id():
+    sample_0 = {"sample": 0, "season": 1}
+    sample_1 = {"sample": 1, "season": 2}
+    dataset = {
+        "0020900": sample_0,
+        "0020800": sample_1,
+    }
+
+    result = remove_eval_seasons_game_id(dataset=dataset)
+
+    assert result == {"0020800": sample_1}
+
+
+def test_convert_to_list():
+    sample_0 = {"sample": 0, "season": 1}
+    sample_1 = {"sample": 1, "season": 2}
+    dataset = {"val_0": {"val_1": sample_0, "val_2": sample_1}}
+
+    result = convert_to_list(dataset=dataset, key_field_names=["field_0", "field_1"])
+
+    assert result == [
+        {**{"field_0": "val_0", "field_1": "val_1"}, **sample_0},
+        {**{"field_0": "val_0", "field_1": "val_2"}, **sample_1},
+    ]

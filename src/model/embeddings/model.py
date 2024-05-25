@@ -20,9 +20,7 @@ class Player2VecModel(LightningModule):
 
     def init_model(self) -> nn.Sequential:
         model = nn.Sequential()
-        model.add_module(
-            "embedding_layer", nn.Linear(self.config.num_embeddings, self.config.embedding_size, bias=False)
-        )
+        model.add_module("embedding_layer", nn.Embedding(self.config.num_embeddings, self.config.embedding_size))
         model.add_module("inference_layer", nn.Linear(self.config.embedding_size, self.config.num_fields))
         model.add_module("tanh", nn.Tanh())
         return model

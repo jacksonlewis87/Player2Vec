@@ -4,13 +4,13 @@ from constants import EVAL_SEASONS
 
 
 def preprocess_field(field: str, value):
-    if field == "fg3_pct":
+    if field.lower() == "fg3_pct":
         return max(min(value, 0.6), 0.2)
-    elif field == "fg_pct":
+    elif field.lower() == "fg_pct":
         return max(min(value, 0.7), 0.3)
-    elif field == "ft_pct":
+    elif field.lower() == "ft_pct":
         return max(value, 0.5)
-    elif field[:5] == "rank_":
+    elif field[:5].lower() == "rank_":
         return min(value, 600)
     else:
         return value
@@ -78,3 +78,16 @@ def remove_non_total_seasons(dataset: list):
 
 def remove_eval_seasons(dataset: list):
     return [sample for sample in dataset if sample["season"] not in EVAL_SEASONS]
+
+
+def remove_eval_seasons_game_id(dataset: dict):
+    return {game_id: players for game_id, players in dataset.items() if int(f"20{game_id[3:5]}") not in EVAL_SEASONS}
+
+
+def convert_to_list(dataset: dict, key_field_names: list):
+    data = []
+    for key_0, value_0 in dataset.items():
+        if isinstance(value_0, dict):
+            for key_1, value_1 in value_0.items():
+                data += [{**{key_field_names[0]: key_0, key_field_names[1]: key_1}, **value_1}]
+    return data

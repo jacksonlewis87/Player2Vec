@@ -6,7 +6,7 @@ from model.model_driver import ModelDriver
 
 
 def train_embeddings_model(config: FullConfig):
-    data_module = setup_data_module(config=config.data_config)
+    data_module = setup_data_module(config=config)
     loss = get_loss(loss=config.model_config.loss)
     model = Player2VecModel(config=config.model_config, loss=loss)
 
