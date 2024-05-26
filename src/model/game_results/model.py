@@ -11,14 +11,16 @@ class GameResultsModel(LightningModule):
         self.config = config
         self.loss = loss
 
-        self.attention = [
-            nn.TransformerEncoderLayer(
-                d_model=self.config.embedding_size,
-                nhead=self.config.num_heads,
-                dropout=self.config.dropout,
+        self.attention = nn.Sequential()
+        for i in range(self.config.num_attention_layers):
+            self.attention.add_module(
+                f"encoder_layer_{i}",
+                nn.TransformerEncoderLayer(
+                    d_model=self.config.embedding_size,
+                    nhead=self.config.num_heads,
+                    dropout=self.config.dropout,
+                ),
             )
-            for _ in range(self.config.num_attention_layers)
-        ]
 
         self.sequential = nn.Sequential()
         self.sequential.add_module("flatten", nn.Flatten())
@@ -32,8 +34,7 @@ class GameResultsModel(LightningModule):
 
     def forward(self, x):
         x = x.permute(1, 0, 2)  # (sequence_length, batch_size, input_dim)
-        for attention_layer in self.attention:
-            x = attention_layer(x)
+        x = self.attention(x)
         x = x.permute(1, 0, 2)  # (batch_size, sequence_length, input_dim)
         return self.sequential(x)
 
@@ -51,5 +52,14 @@ class GameResultsModel(LightningModule):
         self.log("val_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
-    def configure_optimizers(self) -> optim.Optimizer:
-        return optim.Adam(self.parameters(), lr=self.config.learning_rate)
+    def configure_optimizers(self):
+        # return optim.Adam(self.parameters(), lr=self.config.learning_rate)
+        optimizer = optim.Adam(self.parameters(), lr=self.config.learning_rate)  # Adam optimizer
+        scheduler = {
+            "scheduler": optim.lr_scheduler.OneCycleLR(
+                optimizer,
+                max_lr=self.config.learning_rate,
+                total_steps=self.config.epochs,
+            ),
+        }
+        return [optimizer], [scheduler]

@@ -16,23 +16,35 @@ def save_json(path: str, contents):
         json.dump(contents, f)
 
 
-def get_data_split(config: DataConfig, game_results: list[dict], stage: str):
+def get_data_split(
+    config: DataConfig, game_results: list[dict], stage: str, min_game_ids: dict, min_game_id_override: int = 0
+):
     if stage == "eval":
         return {
             "train": [],
-            "val": get_eval_game_ids(game_results=game_results),
+            "val": get_eval_game_ids(
+                game_results=game_results, min_game_ids=min_game_ids, min_game_id_override=min_game_id_override
+            ),
         }
     elif os.path.isfile(config.data_split_path):
         return load_json(path=config.data_split_path)
     else:
-        return create_data_split(config=config, game_results=game_results)
+        return create_data_split(
+            config=config,
+            game_results=game_results,
+            min_game_ids=min_game_ids,
+            min_game_id_override=min_game_id_override,
+        )
 
 
-def create_data_split(config: DataConfig, game_results: list[dict]):
+def create_data_split(config: DataConfig, game_results: list[dict], min_game_ids: dict, min_game_id_override: int = 0):
     game_ids = [
         game["game_id"]
         for game in game_results
-        if game["season"] not in EVAL_SEASONS and game["game_id"] not in BAD_GAME_IDS
+        if game["season"] not in EVAL_SEASONS
+        and game["game_id"] not in BAD_GAME_IDS
+        and int(game["game_id"]) >= int(min_game_ids[game["season"]])
+        and int(game["game_id"][-4:]) > min_game_id_override
     ]
 
     if len(list(set(game_ids))) != len(game_ids):
@@ -49,11 +61,13 @@ def create_data_split(config: DataConfig, game_results: list[dict]):
     return data_split
 
 
-def get_eval_game_ids(game_results: list[dict]):
+def get_eval_game_ids(game_results: list[dict], min_game_ids: dict, min_game_id_override: int = 0):
     game_ids = [
         game["game_id"]
         for game in game_results
-        if game["season"] in EVAL_SEASONS and game["game_id"] not in BAD_GAME_IDS
+        if game["season"] in EVAL_SEASONS
+        and game["game_id"]
+        not in BAD_GAME_IDS  # and int(game["game_id"]) >= int(min_game_ids[game["season"]]) and int(game["game_id"][-4:]) > min_game_id_override
     ]
     return game_ids
 
@@ -69,3 +83,15 @@ def create_game_result_dict(game_results: list[dict]):
         }
 
     return game_results_dict
+
+
+def get_min_game_ids(embeddings: dict):
+    min_game_ids = {}
+    for game_id in list(set([value["game_id"] for value in embeddings.values()])):
+        season = int(f"20{game_id[3:5]}")
+        if season not in min_game_ids:
+            min_game_ids[season] = None
+        if min_game_ids[season] is None or int(min_game_ids[season][-4:]) > int(game_id[-4:]):
+            min_game_ids[season] = game_id
+
+    return min_game_ids

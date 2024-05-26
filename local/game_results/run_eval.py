@@ -6,15 +6,15 @@ from model.game_results.eval import eval_game_results_model
 
 
 def do_work():
-    experiment_name = "game_results_v0"
-    version = 17
+    experiment_name = "game_results_v1"
+    version = 0
     epoch = 99
-    step = 123700
+    step = 7900
 
     config = FullConfig(
         data_config=DataConfig(
             game_results_path=f"{ROOT_DIR}/data/game_results.json",
-            embeddings_path=f"{ROOT_DIR}/data/embeddings_v0-12.json",
+            embeddings_path=f"{ROOT_DIR}/data/embeddings_v1-0.json",
             data_split_path=f"{ROOT_DIR}/data/training/{experiment_name}/data_split.json",
             batch_size=16,
             train_size=0.8,
@@ -27,8 +27,12 @@ def do_work():
             epochs=100,
             checkpoint_path=f"{ROOT_DIR}/data/training/{experiment_name}/lightning_logs/version_{version}/checkpoints/epoch={epoch}-step={step}.ckpt",
             loss=Loss.BCE.value,
-            embedding_size=12,
+            embedding_size=8,
             max_num_players=15,
+            hidden_dim=16,
+            num_heads=4,
+            num_attention_layers=2,
+            dropout=0.4,
         ),
     )
 

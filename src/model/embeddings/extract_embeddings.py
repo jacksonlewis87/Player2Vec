@@ -29,3 +29,26 @@ def extract_embeddings(path_to_checkpoint: str, output_path: str):
 
     with open(output_path, "w") as f:
         json.dump(embeddings, fp=f)
+
+
+def extract_game_embeddings(path_to_checkpoint: str, path_to_encodings: str, output_path: str):
+    checkpoint = torch.load(path_to_checkpoint)["state_dict"]
+    weights = checkpoint["model.embedding_layer.weight"]
+
+    encodings = load_player_season_encodings(path=f"{path_to_encodings}/player_season_encodings.json")
+    encodings = {v: k for k, v in encodings.items()}
+
+    players = {row.id: row.name for row in get_all_players()}
+    embeddings = {}
+
+    for i in range(weights.size(dim=0)):
+        player_id, game_id = encodings[i].split("_")
+        name = players[int(player_id)] if int(player_id) in players else "None"
+        embeddings[encodings[i]] = {
+            "name": name,
+            "game_id": game_id,
+            "embedding": [round(float(w), 4) for w in list(weights[i])],
+        }
+
+    with open(output_path, "w") as f:
+        json.dump(embeddings, fp=f)

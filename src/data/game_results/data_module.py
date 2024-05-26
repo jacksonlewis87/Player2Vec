@@ -6,7 +6,7 @@ from typing import Optional
 
 from data.game_results.data_config import DataConfig
 from data.game_results.transforms import shuffle_players, pad_team_players
-from data.game_results.utils import create_game_result_dict, load_json, get_data_split, get_eval_game_ids
+from data.game_results.utils import create_game_result_dict, load_json, get_data_split, get_min_game_ids
 
 
 class GameResultsDataset(Dataset):
@@ -21,6 +21,7 @@ class GameResultsDataset(Dataset):
         self.game_ids = game_ids
         self.game_results = game_results
         self.embeddings = embeddings
+        self.embedding_size = len(list(self.embeddings.values())[0]["embedding"])
 
     def __getitem__(self, index: int):
         game_id = self.game_ids[index]
@@ -29,11 +30,20 @@ class GameResultsDataset(Dataset):
         away_player_ids = shuffle_players(game["away_player_ids"], shuffle_bool=self.config.shuffle_players)
         home_player_ids = shuffle_players(game["home_player_ids"], shuffle_bool=self.config.shuffle_players)
 
+        if len(away_player_ids) > 15 or len(home_player_ids) > 15:
+            print(game_id)
+
         away_player_embeddings = [
-            torch.tensor(self.embeddings[f"{player_id}_{game['season']}"]["embedding"]) for player_id in away_player_ids
+            torch.tensor(self.embeddings[f"{player_id}_{game_id}"]["embedding"])
+            if f"{player_id}_{game_id}" in self.embeddings
+            else torch.zeros(self.embedding_size)
+            for player_id in away_player_ids
         ]
         home_player_embeddings = [
-            torch.tensor(self.embeddings[f"{player_id}_{game['season']}"]["embedding"]) for player_id in home_player_ids
+            torch.tensor(self.embeddings[f"{player_id}_{game_id}"]["embedding"])
+            if f"{player_id}_{game_id}" in self.embeddings
+            else torch.zeros(self.embedding_size)
+            for player_id in home_player_ids
         ]
         away_player_embeddings = pad_team_players(
             embedding_list=away_player_embeddings,
@@ -63,7 +73,15 @@ class GameResultsDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         game_results = load_json(path=self.config.game_results_path)
         embeddings = load_json(path=self.config.embeddings_path)
-        data_split = get_data_split(config=self.config, game_results=game_results, stage=stage)
+        min_game_ids = get_min_game_ids(embeddings=embeddings)
+
+        data_split = get_data_split(
+            config=self.config,
+            game_results=game_results,
+            stage=stage,
+            min_game_ids=min_game_ids,
+            min_game_id_override=400,
+        )
         game_results = create_game_result_dict(game_results=game_results)
 
         self.train_dataset = GameResultsDataset(
