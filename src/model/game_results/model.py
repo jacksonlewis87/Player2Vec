@@ -53,8 +53,7 @@ class GameResultsModel(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        # return optim.Adam(self.parameters(), lr=self.config.learning_rate)
-        optimizer = optim.Adam(self.parameters(), lr=self.config.learning_rate)  # Adam optimizer
+        optimizer = optim.Adam(self.parameters(), lr=self.config.learning_rate)
         scheduler = {
             "scheduler": optim.lr_scheduler.OneCycleLR(
                 optimizer,

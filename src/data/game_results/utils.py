@@ -66,8 +66,9 @@ def get_eval_game_ids(game_results: list[dict], min_game_ids: dict, min_game_id_
         game["game_id"]
         for game in game_results
         if game["season"] in EVAL_SEASONS
-        and game["game_id"]
-        not in BAD_GAME_IDS  # and int(game["game_id"]) >= int(min_game_ids[game["season"]]) and int(game["game_id"][-4:]) > min_game_id_override
+        and game["game_id"] not in BAD_GAME_IDS
+        and int(game["game_id"]) >= int(min_game_ids[game["season"]])
+        and int(game["game_id"][-4:]) > min_game_id_override
     ]
     return game_ids
 

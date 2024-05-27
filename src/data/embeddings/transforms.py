@@ -76,12 +76,20 @@ def remove_non_total_seasons(dataset: list):
     return new_dataset
 
 
-def remove_eval_seasons(dataset: list):
-    return [sample for sample in dataset if sample["season"] not in EVAL_SEASONS]
+def remove_eval_seasons(dataset: list, stage: str = "train"):
+    if stage == "eval":
+        return [sample for sample in dataset if sample["season"] in EVAL_SEASONS]
+    else:
+        return [sample for sample in dataset if sample["season"] not in EVAL_SEASONS]
 
 
-def remove_eval_seasons_game_id(dataset: dict):
-    return {game_id: players for game_id, players in dataset.items() if int(f"20{game_id[3:5]}") not in EVAL_SEASONS}
+def remove_eval_seasons_game_id(dataset: dict, stage: str = "train"):
+    if stage == "eval":
+        return {game_id: players for game_id, players in dataset.items() if int(f"20{game_id[3:5]}") in EVAL_SEASONS}
+    else:
+        return {
+            game_id: players for game_id, players in dataset.items() if int(f"20{game_id[3:5]}") not in EVAL_SEASONS
+        }
 
 
 def convert_to_list(dataset: dict, key_field_names: list):

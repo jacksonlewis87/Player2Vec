@@ -7,14 +7,14 @@ from model.game_results.eval import eval_game_results_model
 
 def do_work():
     experiment_name = "game_results_v1"
-    version = 0
+    version = 2
     epoch = 99
-    step = 7900
+    step = 5000
 
     config = FullConfig(
         data_config=DataConfig(
             game_results_path=f"{ROOT_DIR}/data/game_results.json",
-            embeddings_path=f"{ROOT_DIR}/data/embeddings_v1-0.json",
+            embeddings_path=f"{ROOT_DIR}/data/eval_embeddings_v1-0.json",
             data_split_path=f"{ROOT_DIR}/data/training/{experiment_name}/data_split.json",
             batch_size=16,
             train_size=0.8,

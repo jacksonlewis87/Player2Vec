@@ -5,10 +5,13 @@ from model.embeddings.model_config import FullConfig
 from model.model_driver import ModelDriver
 
 
-def train_embeddings_model(config: FullConfig):
-    data_module = setup_data_module(config=config)
+def train_embeddings_model(config: FullConfig, stage: str = "train"):
+    data_module = setup_data_module(config=config, stage=stage)
     loss = get_loss(loss=config.model_config.loss)
-    model = Player2VecModel(config=config.model_config, loss=loss)
+    model = Player2VecModel(config=config.model_config, loss=loss, stage=stage)
+
+    if stage == "eval":
+        config.model_config.checkpoint_path = None
 
     ModelDriver(
         full_config=config,

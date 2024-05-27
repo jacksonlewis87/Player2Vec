@@ -7,6 +7,8 @@ from data.embeddings.data_config import DataConfig
 class ModelConfig:
     experiment_path: str
     learning_rate: float
+    lr_step_size: int
+    lr_gamma: float
     epochs: int
     checkpoint_path: str
     loss: str

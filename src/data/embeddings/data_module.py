@@ -3,7 +3,6 @@ import os
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
-from typing import Optional
 
 from data.embeddings.transforms import (
     remove_non_total_seasons,
@@ -19,23 +18,24 @@ class Player2VecDataset(Dataset):
     def __init__(
         self,
         config: FullConfig,
+        stage: str = "train",
     ) -> None:
         self.config = config
         self.player_seasons = []
         self.player_season_encodings = {}
         self.data = {}
-        self.setup()
+        self.setup(stage=stage)
 
-    def setup(self):
+    def setup(self, stage: str = "train"):
         with open(self.config.data_config.data_path, "r") as f:
             data = json.load(fp=f)
 
         if isinstance(data, dict):
-            data = remove_eval_seasons_game_id(dataset=data)
+            data = remove_eval_seasons_game_id(dataset=data, stage=stage)
             data = convert_to_list(dataset=data, key_field_names=["game_id", "player_id"])
             row_to_id = lambda row: f"{row['player_id']}_{row['game_id']}"
         else:
-            data = remove_eval_seasons(dataset=data)
+            data = remove_eval_seasons(dataset=data, stage=stage)
             data = remove_non_total_seasons(dataset=data)
             row_to_id = lambda row: f"{row['player_id']}_{row['season']}"
 
@@ -46,6 +46,7 @@ class Player2VecDataset(Dataset):
         )
         data = {row_to_id(row): row for row in data}
         self.player_seasons = list(data.keys())
+        # TODO save normalizations
         self.data = normalize_dataset(dataset=data, keys_to_ignore=self.config.data_config.keys_to_ignore)
         print(len(self.data))
 
@@ -62,15 +63,16 @@ class Player2VecDataModule(LightningDataModule):
     def __init__(
         self,
         config: FullConfig,
+        stage: str = "train",
     ) -> None:
         super().__init__()
         self.config = config
 
         self.train_dataset = None
-        self.setup()
+        self.setup(stage=stage)
 
-    def setup(self, stage: Optional[str] = None):
-        self.train_dataset = Player2VecDataset(config=self.config)
+    def setup(self, stage: str = "train"):
+        self.train_dataset = Player2VecDataset(config=self.config, stage=stage)
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_dataset, batch_size=self.config.data_config.batch_size, shuffle=True)
@@ -113,5 +115,5 @@ def get_one_hot_encoding(encoding_length: int, encoding_value: int):
     return [1.0 if i == encoding_value else 0.0 for i in range(encoding_length)]
 
 
-def setup_data_module(config: FullConfig):
-    return Player2VecDataModule(config=config)
+def setup_data_module(config: FullConfig, stage: str = "train"):
+    return Player2VecDataModule(config=config, stage=stage)
